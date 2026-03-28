@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>울림없는 기다림</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green: #34C759; --amber: #D4A85A;
+  --kakao: #FEE500; --kakao-txt: #191919;
+  --bg: #1C1C1E; --card: #2C2C2E; --card2: #3A3A3C; --blue: #0A84FF;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+html, body {
+  height: 100dvh; width: 100%;
+  overflow: hidden; background: #000;
+  font-family: 'Noto Sans KR', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+}
+.screen { display:none; position:fixed; inset:0; flex-direction:column; height:100dvh; }
+.screen.active { display:flex; }
+
+/* ════ S0 CALL ════ */
+#s-call { background:#3a3a3c; overflow:hidden; position:relative; }
+.call-bg { position:absolute; inset:0; z-index:0; }
+.call-bg-img { position:absolute; inset:-20px; background:center/cover no-repeat; filter:blur(32px) brightness(.28) saturate(.5); transform:scale(1.12); }
+.call-bg-grad { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,.4) 0%,rgba(0,0,0,.05) 35%,rgba(0,0,0,.05) 55%,rgba(0,0,0,.65) 100%); }
+
+.call-statusbar {
+  position: relative; z-index: 10;
+  padding: calc(var(--safe-top) + 12px) 24px 0;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0;
+}
+.csb-time { font-size: clamp(14px,3.8vw,16px); font-weight:600; color:rgba(255,255,255,.9); }
+.csb-icons { display:flex; align-items:center; gap:6px; color:rgba(255,255,255,.85); }
+
+.call-top {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; align-items: center;
+  margin-top: clamp(32px, 10dvh, 72px);
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+.call-label { font-size: clamp(13px,3.5vw,15px); font-weight:400; color:rgba(255,255,255,.65); letter-spacing:.01em; margin-bottom:6px; }
+.call-name  { font-size: clamp(40px,11vw,58px); font-weight:300; color:#fff; letter-spacing:-.03em; }
+.call-age   { margin-top: 8px; font-size: clamp(13px,3.5vw,15px); color:rgba(255,255,255,.5); }
+
+.call-photo-wrap { display:none; }
+.call-photo { display:none; }
+.call-spacer { flex:1; min-height: 0; }
+
+.call-actions {
+  position: relative; z-index: 10;
+  display: flex; justify-content: space-evenly;
+  padding: 0 clamp(20px,8vw,52px);
+  margin-bottom: clamp(16px,4dvh,32px);
+  flex-shrink: 0;
+}
+.call-action-btn { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.call-action-btn span { font-size: clamp(11px,3vw,13px); color:rgba(255,255,255,.55); }
+.call-action-circle {
+  width: clamp(52px,14vw,64px); height: clamp(52px,14vw,64px);
+  border-radius:50%; background:rgba(255,255,255,.18);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  display:flex; align-items:center; justify-content:center;
+}
+.call-action-circle svg { width:clamp(22px,6vw,28px); height:clamp(22px,6vw,28px); color:#fff; }
+
+/* SWIPE pill */
+.swipe-area {
+  position: relative; z-index: 10;
+  margin: 0 20px;
+  margin-bottom: calc(var(--safe-bot) + clamp(16px,4dvh,32px));
+  height: clamp(60px,9dvh,72px);
+  background: rgba(255,255,255,.18); border-radius:100px;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  overflow:hidden; cursor:pointer; user-select:none; -webkit-user-select:none;
+  flex-shrink: 0;
+}
+.swipe-track { position:absolute; inset:0; display:flex; align-items:center; }
+.swipe-hint {
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  font-size: clamp(13px,3.8vw,15px); font-weight:400;
+  color:rgba(255,255,255,.72); pointer-events:none; white-space:nowrap; transition:opacity .2s;
+}
+.swipe-arrow { display:none; }
+.swipe-thumb {
+  position:absolute; left:8px; top:8px;
+  width: clamp(44px,7dvh,56px); height: clamp(44px,7dvh,56px);
+  border-radius:50%; background:var(--green);
+  display:flex; align-items:center; justify-content:center;
+  cursor:grab; touch-action:none; z-index:2;
+  box-shadow:0 2px 12px rgba(52,199,89,.6);
+}
+.swipe-thumb svg { width:26px; height:26px; color:#fff; }
+.swipe-fill { position:absolute; left:0; top:0; bottom:0; width:52px; background:rgba(52,199,89,.18); border-radius:100px; pointer-events:none; }
+@keyframes arrowPulse { 0%,100%{transform:translateX(0);} 50%{transform:translateX(-3px);} }
+
+/* ════ S1 FLOW ════ */
+#s-flow { background:#000; align-items:center; justify-content:center; }
+.flow-inner { display:flex; flex-direction:column; align-items:center; padding:0 clamp(28px,8vw,44px); width:100%; text-align:center; }
+#phase-connecting { display:flex; flex-direction:column; align-items:center; }
+.conn-icon { width:72px; height:72px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; margin-bottom:28px; animation:connPulse 1.4s ease-in-out infinite; }
+@keyframes connPulse { 0%,100%{box-shadow:0 0 0 0 rgba(52,199,89,.4);} 50%{box-shadow:0 0 0 18px rgba(52,199,89,0);} }
+.conn-icon svg { width:34px; height:34px; color:#fff; }
+.conn-waiting { font-family:'Noto Serif KR',serif; font-size:clamp(18px,5vw,22px); font-weight:300; color:rgba(255,255,255,.95); letter-spacing:-.01em; margin-bottom:16px; }
+.conn-dots { display:flex; gap:8px; }
+.conn-dots span { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.3); animation:dotBounce 1.2s ease-in-out infinite; }
+.conn-dots span:nth-child(2){animation-delay:.2s;} .conn-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes dotBounce { 0%,80%,100%{transform:scale(.7);opacity:.3;} 40%{transform:scale(1);opacity:1;} }
+#phase-message { display:none; flex-direction:column; align-items:center; width:100%; }
+.msg-single { font-family:'Noto Serif KR',serif; font-size:clamp(17px,4.8vw,21px); font-weight:300; line-height:2; color:rgba(255,255,255,.9); letter-spacing:-.01em; width:100%; }
+#phase-btn { display:none; width:100%; justify-content:center; }
+.btn-confirm { width:100%; max-width:320px; padding:clamp(14px,4dvh,18px) 24px; background:rgba(255,255,255,.95); color:#1a1714; border:none; border-radius:100px; font-size:15px; font-weight:600; cursor:pointer; letter-spacing:.02em; opacity:0; transform:translateY(10px); }
+.btn-confirm.visible { opacity:1; transform:translateY(0); transition:opacity .7s ease,transform .7s ease; }
+.btn-confirm:active { transform:scale(.97); background:#e0dcd6; }
+
+/* ════ SHARED NAV ════ */
+.iphone-nav {
+  background:rgba(28,28,30,.96); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  padding: calc(var(--safe-top) + 12px) 16px 12px;
+  flex-shrink:0; border-bottom:.5px solid rgba(255,255,255,.1);
+  position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:8px;
+}
+.nav-back { background:none; border:none; color:var(--blue); font-size:17px; font-weight:400; cursor:pointer; display:flex; align-items:center; gap:4px; padding:4px 0; white-space:nowrap; }
+.nav-back svg { width:10px; height:18px; }
+.nav-title-block { flex:1; text-align:center; padding-right:52px; }
+.nav-title { font-size:17px; font-weight:600; color:#fff; letter-spacing:-.02em; }
+
+/* ════ S2 KEYPAD ════ */
+#s-select { background:#000; overflow:hidden; display:none; }
+#s-select.active { display:flex; flex-direction:column; height:100dvh; }
+.keypad-wrap { flex:1; display:flex; flex-direction:column; padding:clamp(12px,3dvh,20px) 20px 0; min-height:0; }
+.chat-bubble-wrap { display:flex; align-items:flex-end; gap:8px; margin-bottom:clamp(10px,2.5dvh,20px); flex-shrink:0; }
+.chat-avatar-sm { width:32px; height:32px; border-radius:50%; background:var(--card2); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.chat-bubble { background:#1c1c1e; border-radius:18px 18px 18px 4px; padding:12px 16px; max-width:80%; }
+.chat-bubble p { font-size:14px; color:rgba(255,255,255,.85); line-height:1.7; font-family:'Noto Serif KR',serif; font-weight:300; }
+
+.keypad-display {
+  padding: clamp(4px,1.5dvh,10px) 20px;
+  display:flex; align-items:center; justify-content:center; position:relative;
+  min-height: clamp(56px,9dvh,76px);
+  flex-shrink: 0;
+}
+.kd-number { font-size: clamp(40px,11vw,56px); font-weight:300; color:#fff; letter-spacing:-.02em; text-align:center; }
+.kd-placeholder { font-size: clamp(40px,11vw,56px); font-weight:300; color:rgba(255,255,255,.18); }
+.kd-delete { position:absolute; right:20px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:8px; color:rgba(255,255,255,.5); }
+.kd-delete svg { width:24px; height:24px; }
+
+/* iOS circular dial — fills remaining space */
+.dial-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: clamp(8px,2dvh,16px);
+  flex: 1; min-height: 0;
+  padding: 0 clamp(8px,3vw,16px);
+  margin-bottom: clamp(8px,2dvh,16px);
+  align-content: start;
+}
+.dial-key {
+  background:#1c1c1e; border:none; border-radius:50%; aspect-ratio:1;
+  cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1px; transition:background .1s; -webkit-tap-highlight-color:transparent;
+  max-height: clamp(64px, 12dvh, 96px); width:100%;
+}
+.dial-key:active { background:#3a3a3c; }
+.dk-num { font-size: clamp(24px,6.5vw,32px); font-weight:300; color:#fff; line-height:1.1; }
+.dk-abc { font-size: clamp(8px,2.2vw,10px); font-weight:500; color:rgba(255,255,255,.45); letter-spacing:.1em; }
+.dial-key.dial-go {
+  background:var(--green); border-radius:50%; aspect-ratio:1;
+  grid-column:2; flex-direction:column; gap:2px; padding:0; color:#fff;
+  box-shadow:0 4px 24px rgba(52,199,89,.4); border:none; cursor:pointer;
+  justify-content:center; align-items:center; transition:background .12s,transform .1s;
+  max-height: clamp(64px,12dvh,96px); width:100%;
+}
+.dial-key.dial-go:active { background:#2aad4a; transform:scale(.93); }
+.dial-key.dial-go svg { width:clamp(22px,6vw,30px); height:clamp(22px,6vw,30px); }
+.dk-go-label { font-size: clamp(10px,2.6vw,12px); font-weight:500; color:#fff; letter-spacing:.02em; }
+
+.sel-footer { padding: clamp(8px,2dvh,16px) 20px calc(var(--safe-bot) + clamp(12px,3dvh,24px)); flex-shrink:0; }
+.sel-note { background:var(--card); border-radius:16px; padding:14px 16px; border-left:3px solid var(--amber); }
+.sel-note p { font-family:'Noto Serif KR',serif; font-size:clamp(11px,3vw,13px); font-weight:300; color:rgba(255,255,255,.65); line-height:1.9; }
+
+/* ════ S3 DETAIL SNS CARD ════ */
+#s-detail { background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch; display:none; }
+#s-detail.active { display:flex; flex-direction:column; }
+.sns-card { margin:12px 14px 0; background:linear-gradient(160deg,#2a2a2c 0%,#1e1e20 100%); border-radius:24px; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.5); position:relative; }
+.sns-card-stripe { height:4px; background:linear-gradient(90deg,var(--amber),#f0c870,var(--amber)); }
+.sns-bell-badge { position:absolute; top:14px; right:14px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:100px; padding:5px 12px; font-size:11px; font-weight:600; color:rgba(255,255,255,.45); letter-spacing:.06em; backdrop-filter:blur(8px); }
+.sns-avatar-wrap { display:flex; flex-direction:column; align-items:center; padding:clamp(18px,5dvh,28px) 20px 0; }
+.sns-avatar { width:clamp(80px,22vw,110px); height:clamp(80px,22vw,110px); border-radius:50%; overflow:hidden; background:var(--card2); border:3px solid rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:40px; animation:snsAvatarGlow 3s ease-in-out infinite; }
+@keyframes snsAvatarGlow { 0%,100%{box-shadow:0 0 0 6px rgba(212,168,90,.1);} 50%{box-shadow:0 0 0 14px rgba(212,168,90,.03);} }
+.sns-avatar img { width:100%; height:100%; object-fit:cover; }
+.sns-avatar-label { margin-top:8px; font-size:10px; font-weight:600; color:rgba(255,255,255,.28); letter-spacing:.12em; text-transform:uppercase; }
+.sns-name { font-family:'Noto Serif KR',serif; font-size:clamp(32px,9vw,42px); font-weight:400; color:#fff; text-align:center; letter-spacing:-.04em; margin-top:10px; padding:0 20px; }
+.sns-vib { display:flex; align-items:center; gap:6px; justify-content:center; margin-top:6px; }
+.sns-vib-dots i { width:4px; height:4px; border-radius:50%; background:var(--green); display:inline-block; animation:vp 1s infinite; margin-right:3px; }
+.sns-vib-dots i:nth-child(2){animation-delay:.2s;} .sns-vib-dots i:nth-child(3){animation-delay:.4s;}
+@keyframes vp{0%,100%{opacity:.2;}50%{opacity:1;}}
+.sns-vib span { font-size:11px; color:var(--green); font-weight:500; letter-spacing:.04em; }
+.sns-chips { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding:14px 16px 0; }
+.sns-chip { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:100px; padding:5px 12px; font-size:clamp(11px,3vw,12px); color:rgba(255,255,255,.65); white-space:nowrap; }
+.sns-chip strong { color:#fff; font-weight:600; }
+.sns-chip.red { border-color:rgba(255,69,58,.3); color:rgba(255,120,110,.9); }
+.sns-chip.red strong { color:#FF6B63; }
+.sns-quote { margin:14px 16px 0; background:rgba(212,168,90,.07); border-radius:14px; padding:12px 16px; border:1px solid rgba(212,168,90,.16); text-align:center; }
+.sns-quote p { font-family:'Noto Serif KR',serif; font-size:clamp(12px,3.2vw,13px); font-weight:300; color:rgba(255,255,255,.55); line-height:1.9; }
+.sns-quote strong { color:var(--amber); font-weight:400; }
+.sns-region { margin:12px 16px 20px; display:flex; align-items:center; gap:7px; justify-content:center; }
+.sns-region svg { width:13px; height:13px; color:rgba(255,255,255,.3); flex-shrink:0; }
+.sns-region span { font-size:12px; color:rgba(255,255,255,.38); }
+.det-footer { padding:14px 14px calc(var(--safe-bot) + 24px); }
+.share-lbl { font-size:11px; font-weight:600; letter-spacing:.14em; color:rgba(255,255,255,.32); text-transform:uppercase; text-align:center; margin-bottom:10px; }
+.share-btns { display:flex; flex-direction:column; gap:10px; }
+.btn-kakao { width:100%; padding:clamp(13px,3.5dvh,17px); background:var(--kakao); color:var(--kakao-txt); border:none; border-radius:14px; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px; transition:filter .2s,transform .1s; box-shadow:0 4px 16px rgba(254,229,0,.18); }
+.btn-kakao:active { filter:brightness(.9); transform:scale(.97); }
+.btn-kakao svg { width:20px; height:20px; }
+.btn-copy { width:100%; padding:clamp(13px,3.5dvh,17px); background:var(--card); color:rgba(255,255,255,.82); border:none; border-radius:14px; font-size:15px; font-weight:400; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:background .2s,transform .1s; }
+.btn-copy:active { background:var(--card2); transform:scale(.97); }
+.btn-copy svg { width:17px; height:17px; color:rgba(255,255,255,.4); }
+
+/* Toast */
+.toast { position:fixed; bottom:calc(var(--safe-bot) + 64px); left:50%; transform:translateX(-50%) translateY(12px); background:rgba(50,50,52,.96); backdrop-filter:blur(20px); color:#fff; padding:13px 26px; border-radius:14px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .3s ease,transform .3s ease; z-index:9999; white-space:nowrap; box-shadow:0 4px 24px rgba(0,0,0,.4); }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* Transitions */
+.slide-in { animation:slideIn .38s cubic-bezier(.25,.46,.45,.94) forwards !important; }
+@keyframes slideIn { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
+.fade-in { animation:fadeInA .45s ease forwards; }
+@keyframes fadeInA { from{opacity:0} to{opacity:1} }
+
+/* Incoming call screen shake / vibration visual */
+@keyframes phoneShake {
+  0%,100%  { transform: translateX(0) rotate(0deg); }
+  10%      { transform: translateX(-4px) rotate(-.4deg); }
+  20%      { transform: translateX(4px) rotate(.4deg); }
+  30%      { transform: translateX(-4px) rotate(-.4deg); }
+  40%      { transform: translateX(4px) rotate(.4deg); }
+  50%      { transform: translateX(-3px) rotate(-.2deg); }
+  60%      { transform: translateX(3px) rotate(.2deg); }
+  70%      { transform: translateX(-2px); }
+  80%      { transform: translateX(2px); }
+  90%      { transform: translateX(-1px); }
+}
+.call-vibrate { animation: phoneShake .55s ease-in-out; }
+</style>
+</head>
+<body>
+
+<!-- ════ S0 INCOMING CALL ════ -->
+<section id="s-call" class="screen active">
+  <div class="call-bg">
+    <div class="call-bg-img" id="call-bg-img"></div>
+    <div class="call-bg-grad"></div>
+  </div>
+  <div class="call-statusbar">
+    <span class="csb-time" id="csb-time">9:41</span>
+    <div class="csb-icons">
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx=".5" opacity=".45"/><rect x="4.5" y="5" width="3" height="7" rx=".5" opacity=".65"/><rect x="9" y="2" width="3" height="10" rx=".5"/><rect x="13.5" y="0" width="3" height="12" rx=".5"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 4Q8-1 15 4" opacity=".4"/><path d="M3 6.5Q8 3 13 6.5" opacity=".7"/><path d="M5.5 9Q8 7 10.5 9"/><circle cx="8" cy="11.5" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="12" viewBox="0 0 24 12" fill="currentColor"><rect x="0" y="1" width="20" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".75"/><rect x="20.5" y="4" width="3" height="4" rx="1.2" opacity=".6"/><rect x="1.5" y="2.5" width="14" height="7" rx="1.5" opacity=".9"/></svg>
+    </div>
+  </div>
+  <div class="call-top" style="position:relative;z-index:10;">
+    <div class="call-label" id="call-label">전화 수신 중</div>
+    <div class="call-name" id="call-name">—</div>
+    <div class="call-age" id="call-age">—</div>
+  </div>
+  <!-- hidden photo elements kept for JS compat -->
+  <div class="call-photo-wrap" style="display:none;">
+    <div class="call-photo" id="call-photo">
+      <div class="photo-fallback" id="call-photo-fallback">👤</div>
+    </div>
+  </div>
+  <div class="call-spacer"></div>
+  <div class="call-actions">
+    <div class="call-action-btn">
+      <div class="call-action-circle">
+        <!-- message bubble icon -->
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg>
+      </div>
+      <span>메시지</span>
+    </div>
+    <div class="call-action-btn">
+      <div class="call-action-circle">
+        <!-- clock / remind me later icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <span>나중에 보기</span>
+    </div>
+  </div>
+  <div class="swipe-area" id="swipe-area">
+    <div class="swipe-fill" id="swipe-fill"></div>
+    <div class="swipe-track">
+      <div class="swipe-thumb" id="swipe-thumb">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1C10.61 21 3 13.39 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.58a1 1 0 01-.25 1.02l-2.2 2.19z"/></svg>
+      </div>
+    </div>
+    <span class="swipe-hint" id="swipe-hint">밀어서 받기</span>
+    <div class="swipe-arrow"><span></span><span></span><span></span></div>
+  </div>
+</section>
+
+<!-- ════ S1 FLOW ════ -->
+<section id="s-flow" class="screen">
+  <div class="flow-inner">
+    <div id="phase-connecting">
+      <div class="conn-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1C10.61 21 3 13.39 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.58a1 1 0 01-.25 1.02l-2.2 2.19z"/></svg>
+      </div>
+      <div class="conn-waiting">연결을 기다리는 중</div>
+      <div class="conn-dots"><span></span><span></span><span></span></div>
+    </div>
+    <div id="phase-message" style="text-align:center;width:100%;flex-direction:column;align-items:center;">
+      <div class="msg-single">연결을 기다리는 이 짧은 시간,</div>
+      <div class="msg-single">누군가는 아이가 돌아오기를</div>
+      <div class="msg-single">몇 년째 기다리고 있습니다.</div>
+    </div>
+    <div id="phase-btn" style="width:100%;display:none;justify-content:center;">
+      <button class="btn-confirm" id="confirm-btn" onclick="goTo('select')">진동벨 번호 확인하러 가기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ════ S2 KEYPAD ════ -->
+<section id="s-select" class="screen">
+  <div class="iphone-nav">
+    <button class="nav-back" onclick="goTo('flow')">
+      <svg viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1L1 9l8 8"/></svg>
+      이전
+    </button>
+    <div class="nav-title-block"><div class="nav-title">진동벨 번호 입력</div></div>
+  </div>
+  <div class="keypad-wrap">
+    <div class="chat-bubble-wrap">
+      <div class="chat-avatar-sm">🔔</div>
+      <div class="chat-bubble">
+        <p>손에 들고 계신 진동벨의<br>번호를 입력해 주세요.</p>
+      </div>
+    </div>
+    <div class="keypad-display">
+      <span class="kd-number" id="kd-number"><span class="kd-placeholder">—</span></span>
+      <button class="kd-delete" onclick="keypadDelete()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="13" y2="14"/><line x1="13" y1="9" x2="18" y2="14"/></svg>
+      </button>
+    </div>
+    <div class="dial-grid">
+      <button class="dial-key" onclick="keypadPress('1')"><span class="dk-num">1</span><span class="dk-abc">&nbsp;</span></button>
+      <button class="dial-key" onclick="keypadPress('2')"><span class="dk-num">2</span><span class="dk-abc">ABC</span></button>
+      <button class="dial-key" onclick="keypadPress('3')"><span class="dk-num">3</span><span class="dk-abc">DEF</span></button>
+      <button class="dial-key" onclick="keypadPress('4')"><span class="dk-num">4</span><span class="dk-abc">GHI</span></button>
+      <button class="dial-key" onclick="keypadPress('5')"><span class="dk-num">5</span><span class="dk-abc">JKL</span></button>
+      <button class="dial-key" onclick="keypadPress('6')"><span class="dk-num">6</span><span class="dk-abc">MNO</span></button>
+      <button class="dial-key" onclick="keypadPress('7')"><span class="dk-num">7</span><span class="dk-abc">PQRS</span></button>
+      <button class="dial-key" onclick="keypadPress('8')"><span class="dk-num">8</span><span class="dk-abc">TUV</span></button>
+      <button class="dial-key" onclick="keypadPress('9')"><span class="dk-num">9</span><span class="dk-abc">WXYZ</span></button>
+      <button class="dial-key" style="background:transparent;cursor:default;" disabled></button>
+      <button class="dial-key" onclick="keypadPress('0')"><span class="dk-num">0</span><span class="dk-abc">&nbsp;</span></button>
+      <button class="dial-key" style="background:transparent;" onclick="keypadDelete()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="13" y2="14"/><line x1="13" y1="9" x2="18" y2="14"/></svg>
+      </button>
+      <button class="dial-key dial-go" onclick="keypadConfirm()" style="grid-column:2;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1C10.61 21 3 13.39 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.58a1 1 0 01-.25 1.02l-2.2 2.19z"/></svg>
+        <span class="dk-go-label">확인</span>
+      </button>
+  </div>
+  <div class="sel-footer">
+    <div class="sel-note">
+      <p>이 진동벨은 아이와의 연락을 기다리는 부모님의 마음을 담고 있습니다.<br>벨이 울리는 순간, 누군가의 기다림을 기억해 주세요.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════ S3 DETAIL ════ -->
+<section id="s-detail" class="screen">
+  <div class="iphone-nav">
+    <button class="nav-back" onclick="goTo('select')">
+      <svg viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1L1 9l8 8"/></svg>
+      목록
+    </button>
+    <div class="nav-title-block"><div class="nav-title" id="det-nav-title">아이 정보</div></div>
+  </div>
+
+  <div class="sns-card">
+    <div class="sns-card-stripe"></div>
+    <div class="sns-bell-badge" id="d-bell-badge">진동벨 —번</div>
+    <div class="sns-avatar-wrap">
+      <div class="sns-avatar" id="d-avatar"><span id="d-emoji">👤</span></div>
+      <div class="sns-avatar-label">실종아동</div>
+    </div>
+    <div class="sns-name" id="d-name">—</div>
+    <div class="sns-vib">
+      <div class="sns-vib-dots"><i></i><i></i><i></i></div>
+      <span>진동 중</span>
+    </div>
+    <div class="sns-chips" id="d-chips"></div>
+    <div class="sns-quote">
+      <p>"기억하는 사람이 많아질수록,<br><strong>돌아올 가능성은 커집니다.</strong>"</p>
+    </div>
+    <div class="sns-region">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span id="d-region-text">—</span>
+    </div>
+  </div>
+
+  <div class="det-footer">
+    <p class="share-lbl">이 아이를 기억해 주세요</p>
+    <div class="share-btns">
+      <button class="btn-kakao" onclick="shareKakao()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.7c0 2.714 1.63 5.1 4.1 6.5l-.97 3.54 4.1-2.7c.89.15 1.82.23 2.77.23 5.523 0 10-3.477 10-7.77C22 6.477 17.523 3 12 3z"/></svg>
+        카카오톡으로 공유하기
+      </button>
+      <button class="btn-copy" onclick="copyLink()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        링크 복사하기
+      </button>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
+<script>
+const children=[
+  {id:1,name:"길성호",gender:"남",age:2,currentAge:40,year:1988,date:"1988년 04월 05일",region:"서울특별시 중구 퇴계로"},
+  {id:2,name:"조영란",gender:"여",age:17,currentAge:55,year:1987,date:"1987년 12월 15일",region:"성남 수정구 태평동"},
+  {id:3,name:"김점순",gender:"여",age:3,currentAge:56,year:1973,date:"1973년 03월 01일",region:"전북 전주"},
+  {id:4,name:"이동가",gender:"남",age:7,currentAge:39,year:1993,date:"1993년 06월 01일",region:"경남 창원시 마산회원구"},
+  {id:5,name:"이경미",gender:"여",age:6,currentAge:55,year:1977,date:"1977년 04월 01일",region:"부산 연제구 연산동"},
+  {id:6,name:"김용태",gender:"남",age:10,currentAge:25,year:2010,date:"2010년 12월 19일",region:"충남 공주시 봉황동"},
+  {id:7,name:"정문철",gender:"남",age:4,currentAge:46,year:1984,date:"1984년 07월 27일",region:"경남 밀양시 상동면"},
+  {id:8,name:"홍봉수",gender:"남",age:4,currentAge:42,year:1987,date:"1987년 08월 23일",region:"부산 해운대 바닷가"},
+  {id:9,name:"김은지",gender:"여",age:3,currentAge:27,year:2002,date:"2002년 11월 12일",region:"서울 동작구 신대방1동"},
+  {id:10,name:"서희영",gender:"여",age:10,currentAge:42,year:1994,date:"1994년 04월 27일",region:"전북 남원시 향교동"},
+  {id:11,name:"이예지",gender:"여",age:11,currentAge:27,year:2001,date:"2001년 01월 20일",region:"마산시 산호동"},
+  {id:12,name:"김정성",gender:"여",age:6,currentAge:25,year:2006,date:"2006년 08월 04일",region:"중구 한일시네마 앞 지하도"},
+  {id:13,name:"이은영",gender:"여",age:13,currentAge:33,year:2006,date:"2006년 05월 13일",region:"경남 양산시 웅상읍"},
+  {id:14,name:"김은신",gender:"여",age:4,currentAge:42,year:1988,date:"1988년 09월 01일",region:"서울 중랑구 상봉동"},
+  {id:15,name:"신규진",gender:"남",age:6,currentAge:44,year:1988,date:"1988년 02월 15일",region:"서울 중랑구 면목3동"},
+  {id:16,name:"김은정",gender:"여",age:6,currentAge:44,year:1987,date:"1987년 08월 06일",region:"성남 중원 상대원"},
+];
+let callChild=children[Math.floor(Math.random()*children.length)],current=null;
+
+try{ if(window.Kakao&&!window.Kakao.isInitialized()) window.Kakao.init('YOUR_KAKAO_JS_APP_KEY'); }catch(e){}
+
+(function clock(){
+  const now=new Date(),el=document.getElementById('csb-time');
+  if(el) el.textContent=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  setTimeout(clock,30000);
+})();
+
+(function(){
+  const c=callChild;
+  document.getElementById('call-name').textContent=c.name;
+  document.getElementById('call-age').textContent=`실종 당시 ${c.age}세 · ${c.year}년`;
+  const labelEl=document.getElementById('call-label'); if(labelEl) labelEl.textContent='울림없는 기다림';
+  const img=document.createElement('img'); img.src=`${c.name}.png`; img.alt=c.name;
+  img.onerror=()=>{ img.remove(); };
+  const photo=document.getElementById('call-photo'); if(photo){ photo.insertBefore(img,photo.firstChild); }
+  document.getElementById('call-bg-img').style.backgroundImage=`url('${c.name}.png')`;
+})();
+
+/* ── 진동 효과 (수신 화면) ── */
+(function startIncomingVibration(){
+  const callScreen = document.getElementById('s-call');
+  let vibTimer = null;
+
+  function doVibCycle(){
+    // 실제 진동 (Android Chrome 지원, iOS는 미지원)
+    if(navigator.vibrate){
+      navigator.vibrate([400, 200, 400, 200, 400]);
+    }
+    // 시각적 흔들림 (모든 브라우저)
+    callScreen.classList.remove('call-vibrate');
+    void callScreen.offsetWidth; // reflow
+    callScreen.classList.add('call-vibrate');
+    callScreen.addEventListener('animationend', ()=>callScreen.classList.remove('call-vibrate'), {once:true});
+  }
+
+  // 첫 진동
+  doVibCycle();
+  // 2.8초마다 반복 (전화 벨소리 패턴)
+  vibTimer = setInterval(doVibCycle, 2800);
+
+  // 받으면 진동 멈춤
+  window.__stopIncomingVib = function(){ clearInterval(vibTimer); if(navigator.vibrate) navigator.vibrate(0); };
+})();
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','slide-in','fade-in'));
+  const el=document.getElementById('s-'+id); el.classList.add('active');
+  if(id==='select'||id==='detail'){ void el.offsetWidth; el.classList.add('slide-in'); }
+  else if(id==='flow'){ void el.offsetWidth; el.classList.add('fade-in'); }
+  el.scrollTop=0;
+}
+
+/* Swipe */
+(function(){
+  const area=document.getElementById('swipe-area'),thumb=document.getElementById('swipe-thumb'),fill=document.getElementById('swipe-fill'),hint=document.getElementById('swipe-hint');
+  let dragging=false,startX=0,thumbX=0;
+  const SZ=52,PAD=6;
+  function getMax(){return area.offsetWidth-SZ-PAD*2;}
+  function setThumb(x){
+    const max=getMax(); x=Math.max(0,Math.min(x,max));
+    thumb.style.transform=`translateX(${x}px)`; fill.style.width=`${x+SZ+PAD}px`;
+    const r=x/max; hint.style.opacity=Math.max(0,1-r*2);
+    thumb.style.background=`rgb(52,${Math.round(199+(255-199)*r)},89)`;
+    thumbX=x; if(x>=max*.92) onAnswered();
+  }
+  function onDown(e){dragging=true;startX=(e.touches?e.touches[0].clientX:e.clientX)-thumbX;thumb.style.transition='none';fill.style.transition='none';e.preventDefault();}
+  function onMove(e){if(!dragging)return;setThumb((e.touches?e.touches[0].clientX:e.clientX)-startX);}
+  function onUp(){if(!dragging)return;dragging=false;const max=getMax();if(thumbX<max*.92){thumb.style.transition='transform .35s cubic-bezier(.25,.46,.45,.94)';fill.style.transition='width .35s cubic-bezier(.25,.46,.45,.94)';setThumb(0);hint.style.opacity=1;}}
+  thumb.addEventListener('mousedown',onDown);thumb.addEventListener('touchstart',onDown,{passive:false});
+  window.addEventListener('mousemove',onMove);window.addEventListener('touchmove',onMove,{passive:false});
+  window.addEventListener('mouseup',onUp);window.addEventListener('touchend',onUp);
+})();
+
+let answered=false;
+function onAnswered(){
+  if(answered)return;answered=true;
+  if(window.__stopIncomingVib) window.__stopIncomingVib();
+  if(navigator.vibrate)navigator.vibrate([30,50,30]);
+  goTo('flow');startFlow();
+}
+
+function startFlow(){
+  const pC=document.getElementById('phase-connecting'),pM=document.getElementById('phase-message'),pB=document.getElementById('phase-btn'),cB=document.getElementById('confirm-btn');
+  pC.style.cssText='opacity:1;transform:translateY(0);transition:none;display:flex;flex-direction:column;align-items:center;';
+  pM.style.display='none';pM.style.opacity='0';pB.style.display='none';cB.classList.remove('visible');
+  setTimeout(()=>{
+    pC.style.transition='opacity .6s ease,transform .6s ease';pC.style.opacity='0';pC.style.transform='translateY(-8px)';
+    setTimeout(()=>{
+      pC.style.display='none';
+      pM.style.display='flex';pM.style.opacity='0';pM.style.transform='translateY(10px)';pM.style.transition='none';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        pM.style.transition='opacity .7s ease,transform .7s ease';pM.style.opacity='1';pM.style.transform='translateY(0)';
+      }));
+      setTimeout(()=>{
+        pM.style.transition='opacity .6s ease,transform .6s ease';pM.style.opacity='0';pM.style.transform='translateY(-8px)';
+        setTimeout(()=>{
+          pM.style.display='none';pB.style.display='flex';void cB.offsetWidth;
+          requestAnimationFrame(()=>requestAnimationFrame(()=>cB.classList.add('visible')));
+        },650);
+      },3000);
+    },650);
+  },2000);
+}
+
+/* Keypad */
+let kInput='';
+function keypadPress(n){if(kInput.length>=2)return;kInput+=n;renderKD();}
+function keypadDelete(){kInput=kInput.slice(0,-1);renderKD();}
+function renderKD(){const el=document.getElementById('kd-number');el.innerHTML=kInput===''?'<span class="kd-placeholder">—</span>':kInput;}
+function keypadConfirm(){
+  const id=parseInt(kInput,10),c=children.find(x=>x.id===id);
+  if(!c){shakeDisplay();showToast('해당 번호의 진동벨이 없습니다.');return;}
+  showDetail(id);
+}
+function shakeDisplay(){
+  const el=document.getElementById('kd-number');let t=0;
+  const shake=()=>{if(t>5){el.style.transform='';return;}el.style.transition='transform .08s ease';el.style.transform=t%2?'translateX(8px)':'translateX(-8px)';t++;setTimeout(shake,80);};shake();
+}
+
+/* Detail */
+function showDetail(id){
+  const c=children.find(x=>x.id===id);current=c;
+  document.getElementById('det-nav-title').textContent=c.name;
+  document.getElementById('d-bell-badge').textContent=`진동벨 ${c.id}번`;
+  document.getElementById('d-name').textContent=c.name;
+  const av=document.getElementById('d-avatar'),ex=av.querySelector('img');if(ex)ex.remove();
+  document.getElementById('d-emoji').style.display='none';
+  const img=document.createElement('img');img.src=`${c.name}.png`;img.alt=c.name;
+  img.onerror=()=>{img.remove();document.getElementById('d-emoji').style.display='block';};
+  av.insertBefore(img,av.firstChild);
+  const gender=c.gender==='남'?'남자':'여자';
+  document.getElementById('d-chips').innerHTML=`
+    <div class="sns-chip"><strong>${gender}</strong></div>
+    <div class="sns-chip">실종 당시 <strong>${c.age}세</strong></div>
+    <div class="sns-chip">현재 <strong>약 ${c.currentAge}세</strong> 추정</div>
+    <div class="sns-chip red">실종 <strong>${c.year}년</strong> · ${c.date}</div>
+  `;
+  document.getElementById('d-region-text').textContent=c.region;
+  goTo('detail');
+}
+
+/* Share */
+const makeText=c=>
+  `이 진동벨은 곧 울리지만, 누군가의 기다림은 아직 끝나지 않았습니다.\n\n`+
+  `카페 캠페인 '울림없는 기다림'을 통해 알게 된 실종아동 정보를 공유합니다.\n\n`+
+  `이름: ${c.name} / 실종 당시 나이: ${c.age}세 / 실종 연도: ${c.year}년 / 실종 장소: ${c.region}\n\n`+
+  `기억하는 사람이 많아질수록, 돌아올 가능성은 커집니다.`;
+
+function shareKakao(){
+  if(!current)return;const text=makeText(current),url=location.href;
+  if(window.Kakao?.isInitialized?.()){window.Kakao.Share.sendDefault({objectType:'text',text,link:{mobileWebUrl:url,webUrl:url}});return;}
+  if(navigator.share){navigator.share({title:'울림없는 기다림',text,url}).catch(()=>{});return;}
+  copyToClipboard(text+'\n\n'+url,'카카오 공유 텍스트가 복사되었습니다');
+}
+function copyLink(){if(!current)return;copyToClipboard(makeText(current)+'\n\n'+location.href,'링크가 복사되었습니다');}
+function copyToClipboard(text,msg){
+  if(navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(()=>showToast(msg)).catch(()=>fallbackCopy(text,msg));
+  else fallbackCopy(text,msg);
+}
+function fallbackCopy(text,msg){
+  const t=document.createElement('textarea');t.value=text;t.style.cssText='position:fixed;left:-9999px;top:-9999px';
+  document.body.appendChild(t);t.focus();t.select();
+  try{document.execCommand('copy');showToast(msg);}catch(e){}
+  document.body.removeChild(t);
+}
+function showToast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
